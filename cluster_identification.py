@@ -28,14 +28,12 @@ from plotters import *
 from functions_post_processing import *
 from sssio import *
 
-# from superpos_functions import *
 import matplotlib.pyplot as plt 
 
 # banner
 # print(banner)
 
 #Load file
-# TODO take from config
 mpl.rcParams['figure.dpi'] = 300
 fig_format = '.png'
 
@@ -47,7 +45,7 @@ Config.read(config_path)
 print_msg('config file read from %s' % config_path)
 
 # get segment to analyse
-seg_no= Config.getint('general','segment_number')
+seg_no= Config.getint('postprocessing','segment_number')
 
 # handling paths and creating output directory
 data_path = Path(Config.get('path','data_path'))
@@ -68,16 +66,16 @@ SpikeInfo = SpikeInfo.astype({unit_column: str})
 units = get_units(SpikeInfo,unit_column)
 
 #Load Templates
-Waveforms = np.load(results_folder / "Templates_ini.npy")
+Waveforms = np.load(results_folder / "Templates.npy")
 fs = Blk.segments[seg_no].analogsignals[0].sampling_rate
-n_samples = np.array(Config.get('spike model', 'template_window').split(','), dtype='float32')/1000.0
+n_samples = np.array(Config.get('postprocessing', 'template_window').split(','), dtype='float32')/1000.0
 n_samples = np.array(n_samples * fs, dtype= int)
 
 new_column = 'unit_labeled'
 
-#if len(units) != 3:
-#	print("Three units needed, only %d found in SpikeInfo"%len(units))
-#	exit()
+if len(units) != 3:
+	print("Three units needed, %d found in SpikeInfo"%len(units))
+	exit()
 
 if new_column in SpikeInfo.keys():
     print_msg("Clusters already assigned")
@@ -125,20 +123,10 @@ for unit in units:
 max_ampl= np.max(amplitude)
 norm_factor= (np.max(template_A)-np.min(template_A))/max_ampl
 
+
 for unit in units:
-    #plt.figure()
-    #plt.plot(mean_waveforms[unit]*norm_factor)
-    #plt.plot(template_A)
-    #plt.plot(template_B)
-    #plt.show()
     d_a = np.linalg.norm(mean_waveforms[unit]*norm_factor-template_A)
     d_b = np.linalg.norm(mean_waveforms[unit]*norm_factor-template_B)
-    #d_a = metrics.pairwise.euclidean_distances(mean_waveforms.reshape(1,-1),template_A.reshape(1,-1)).reshape(-1)[0]
-    #d_b = metrics.pairwise.euclidean_distances(mean_waveforms.reshape(1,-1),template_B.reshape(1,-1)).reshape(-1)[0]
-    
-    #compute distances by mean of distances
-    # distances_a = metrics.pairwise.euclidean_distances(waveforms,template_A.reshape(1,-1)).reshape(-1)
-    # distances_b = metrics.pairwise.euclidean_distances(waveforms,template_B.reshape(1,-1)).reshape(-1)
 
     distances_a.append(d_a)
     distances_b.append(d_b)
@@ -178,7 +166,7 @@ SpikeInfo.loc[a_unit_rows.index, new_column] = 'A'
 b_unit_rows = SpikeInfo.groupby(new_column).get_group(b_unit)
 SpikeInfo.loc[b_unit_rows.index, new_column] = 'B'
 
-units = get_units(SpikeInfo, new_column)
+units = get_units(SpikeInfo, new_column, sort=False)
 Blk = populate_block(Blk, SpikeInfo, new_column, units)
 
 # store SpikeInfo
