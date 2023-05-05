@@ -193,7 +193,12 @@ def plot_segment(Seg, units, sigma=0.05, zscore=False, save=None, colors=None):
     axes[0].set_yticklabels(units)
     axes[1].set_ylabel('firing rate (Hz)')
     axes[1].set_xlabel('time (s)')
-    title = Path(Seg.annotations['filename']).stem
+
+
+    try:
+        title = Path(Seg.annotations['filename']).stem
+    except:
+        title = 'Segment %s'%(Seg.name)
 
     fig.suptitle(title)
     fig.tight_layout()
@@ -250,8 +255,11 @@ def plot_fitted_spikes(Segment, j, Models, SpikeInfo, unit_column, unit_order=No
     if zoom is not None:
         for ax in axes:
             ax.set_xlim(zoom)
-            
-    stim_name = Path(Segment.annotations['filename']).stem
+
+    try:
+        stim_name = Path(Segment.annotations['filename']).stem
+    except:
+        stim_name = 'Segment %s-%d'%(Segment.name,j)
 
     fig.suptitle(stim_name)
     fig.tight_layout()
@@ -405,8 +413,12 @@ def plot_fitted_spikes_offline(Segment, j, Models, SpikeInfo, unit_column, wsize
     if zoom is not None:
         for ax in axes:
             ax.set_xlim(zoom)
-            
-    stim_name = Path(Segment.annotations['filename']).stem
+
+    try:
+        stim_name = Path(Segment.annotations['filename']).stem
+    except:
+        stim_name = 'Segment %s-%d'%(Segment.name,j)
+
     fig.suptitle(stim_name)
     fig.tight_layout()
     fig.subplots_adjust(top=0.9)

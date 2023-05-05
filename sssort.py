@@ -457,7 +457,10 @@ if Config.getboolean('output','csv'):
 
     # SpikeTimes
     for i, Seg in enumerate(Blk.segments):
-        seg_name = Path(Seg.annotations['filename']).stem
+        try:
+            seg_name = Path(Seg.annotations['filename']).stem
+        except:
+            seg_name = '%s-%d'%(exp_name, j)
         for j, unit in enumerate(units):
             St, = select_by_dict(Seg.spiketrains, unit=unit)
             outpath = results_folder / ("Segment_%s_unit_%s_spike_times.txt" % (seg_name, unit))
@@ -466,7 +469,10 @@ if Config.getboolean('output','csv'):
     # firing rates - full res
     for i, Seg in enumerate(Blk.segments):
         FratesDf = pd.DataFrame()
-        seg_name = Path(Seg.annotations['filename']).stem
+        try:
+            seg_name = Path(Seg.annotations['filename']).stem
+        except:
+            seg_name = '%s-%d'%(exp_name, j)
         for j, unit in enumerate(units):
             asig, = select_by_dict(Seg.analogsignals, kind='frate_fast', unit=unit)
             FratesDf['t'] = asig.times.magnitude
@@ -489,14 +495,20 @@ if Config.getboolean('output','csv'):
 
 # plot all sorted spikes
 for j, Seg in enumerate(Blk.segments):
-    seg_name = Path(Seg.annotations['filename']).stem
+    try:
+        seg_name = Path(Seg.annotations['filename']).stem
+    except:
+        seg_name = '%s-%d'%(exp_name, j)
     outpath = plots_folder / (seg_name + '_overview' + fig_format)
     plot_segment(Seg, units, save=outpath)
 
 # plot all sorted spikes
 zoom = np.array(Config.get('output','zoom').split(','),dtype='float32') / 1000
 for j, Seg in enumerate(Blk.segments):
-    seg_name = Path(Seg.annotations['filename']).stem
+    try:
+        seg_name = Path(Seg.annotations['filename']).stem
+    except:
+        seg_name = '%s-%d'%(exp_name, j)
     outpath = plots_folder / (seg_name + '_fitted_spikes' + fig_format)
     plot_fitted_spikes(Seg, j, Models, SpikeInfo, last_unit_col, zoom=zoom, save=outpath)
 
