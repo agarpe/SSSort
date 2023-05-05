@@ -194,6 +194,7 @@ def plot_segment(Seg, units, sigma=0.05, zscore=False, save=None, colors=None):
     axes[1].set_ylabel('firing rate (Hz)')
     axes[1].set_xlabel('time (s)')
     title = Path(Seg.annotations['filename']).stem
+
     fig.suptitle(title)
     fig.tight_layout()
     fig.subplots_adjust(top=0.9)
@@ -251,6 +252,7 @@ def plot_fitted_spikes(Segment, j, Models, SpikeInfo, unit_column, unit_order=No
             ax.set_xlim(zoom)
             
     stim_name = Path(Segment.annotations['filename']).stem
+
     fig.suptitle(stim_name)
     fig.tight_layout()
     fig.subplots_adjust(top=0.9)
@@ -335,9 +337,10 @@ def plot_spike_detect(AnalogSignal, SpikeTrain, N=4, w=50*pq.ms, ylim=(-5,5), sa
         t_stop = t_start + w
         asig = AnalogSignal.time_slice(t_start, t_stop)
         st = SpikeTrain.time_slice(t_start, t_stop)
-        axes[*axix[i]].plot(asig.times, asig, color='k', lw=1)
+        x, y = tuple(axix[i])
+        axes[x, y].plot(asig.times, asig, color='k', lw=1)
         for t in st:
-            axes[*axix[i]].axvline(t, color='orange',zorder=-1)
+            axes[x, y].axvline(t, color='orange',zorder=-1)
 
     for ax in axes.flatten():
         for th in [3,4,5]:
