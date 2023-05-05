@@ -104,13 +104,18 @@ def sort_units(units):
     units = np.sort(units).astype('U')
     return list(units)
 
-def get_units(SpikeInfo, unit_column, remove_unassinged=True):
+def get_units(SpikeInfo, unit_column, remove_unassinged=True, sort=True):
     """ helper that returns all units in a given unit column, with or without unassigned """
     units = list(pd.unique(SpikeInfo[unit_column]))
     if remove_unassinged:
         if '-1' in units:
             units.remove('-1')
-    return sort_units(units)
+        if '-2' in units:
+            units.remove('-2')
+    if sort:
+        return sort_units(units)
+    else:
+        return units
 
 def unassign_spikes(SpikeInfo, unit_column, min_good=5):
     """ unassign spikes from unit it unit does not contain enough spikes as samples """
