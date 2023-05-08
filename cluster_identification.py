@@ -63,7 +63,7 @@ SpikeInfo = pd.read_csv(results_folder / "SpikeInfo.csv")
 
 unit_column = [col for col in SpikeInfo.columns if col.startswith('unit')][-1]
 SpikeInfo = SpikeInfo.astype({unit_column: str})
-units = get_units(SpikeInfo,unit_column)
+units = get_units(SpikeInfo,unit_column,sort=False)
 
 #Load Templates
 Waveforms = np.load(results_folder / "Templates.npy")
@@ -73,14 +73,14 @@ n_samples = np.array(n_samples * fs, dtype= int)
 
 new_column = 'unit_labeled'
 
-if len(units) != 3:
-	print("Three units needed, %d found in SpikeInfo"%len(units))
-	exit()
-
 if new_column in SpikeInfo.keys():
     print_msg("Clusters already assigned")
     print(SpikeInfo[unit_column].value_counts())
     exit()
+
+if len(units) != 3:
+	print("Three units needed, %d found in SpikeInfo"%len(units))
+	exit()
 
 
 #Load model templates 
