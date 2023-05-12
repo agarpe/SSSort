@@ -12,6 +12,7 @@ import threading
 # sci
 import scipy as sp
 import numpy as np
+from scipy.optimize import least_squares
 from scipy import stats, signal
 import quantities as pq
 import pandas as pd
@@ -65,7 +66,7 @@ def print_msg(msg, log=True):
         memstr = '('+str(mem_used) + ' GB): '
         timestr = tp.humantime(np.around(time.time()-t0,2))
         print(colorama.Fore.CYAN + timestr + '\t' +  memstr + '\t' +
-              colorama.Fore.GREEN + msg)
+              colorama.Fore.WHITE + msg)
         if log:
             with open('log.log', 'a+') as fH:
                 log_str = timestr + '\t' +  memstr + '\t' + msg + '\n'
@@ -73,7 +74,7 @@ def print_msg(msg, log=True):
     else:
         timestr = tp.humantime(np.around(time.time()-t0,2))
         print(colorama.Fore.CYAN + timestr + '\t' +
-              colorama.Fore.GREEN + msg)
+              colorama.Fore.WHITE + msg)
         if log:
             with open('log.log', 'a+') as fH:
                 log_str = timestr + '\t' + '\t' + msg
@@ -94,6 +95,7 @@ def select_by_dict(objs, **selection):
     """
     res = []
     for obj in objs:
+        # print(obj, selection.items(), obj.annotations.items())
         if selection.items() <= obj.annotations.items():
             res.append(obj)
     return res
@@ -104,18 +106,21 @@ def sort_units(units):
     units = np.sort(units).astype('U')
     return list(units)
 
-def get_units(SpikeInfo, unit_column, remove_unassinged=True, sort=True):
+def get_units(SpikeInfo, unit_column, remove_unassinged=True):
     """ helper that returns all units in a given unit column, with or without unassigned """
     units = list(pd.unique(SpikeInfo[unit_column]))
+
     if remove_unassinged:
         if '-1' in units:
             units.remove('-1')
         if '-2' in units:
             units.remove('-2')
-    if sort:
-        return sort_units(units)
+
+    # if not all digits, return unsorted
+    if any(not unit.isdigit() for unit in units):
+        return list(units)
     else:
-        return units
+        return sort_units(units)
 
 def unassign_spikes(SpikeInfo, unit_column, min_good=5):
     """ unassign spikes from unit it unit does not contain enough spikes as samples """
@@ -280,7 +285,78 @@ class Spike_Model():
         pca_i = [lin(fr,*self.pfits[i]) for i in range(len(self.pfits))]
         return self.pca.inverse_transform(pca_i)
 
-def train_Models(SpikeInfo, unit_column, Templates, n_comp=5, verbose=True):
+class Spike_Model_Nlin():
+    """ models how firing rate influences spike shape. Assumes that predominantly,
+spikes are changed by rescaling positive and negative part in a firing rate dependent
+(potentially non-linear) way. Used for post-processing"""
+
+    def __init__(self, n_comp=5):
+         self.Templates = None
+         self.frates = None
+
+    def align_templates(self):
+        self.Templates= self.Templates-np.outer(np.ones((self.Templates.shape[0],1)),np.mean(self.Templates,axis=0))
+        #plt.figure()
+        #plt.plot(self.Templates)
+        #plt.show()
+
+    def fun(self, x, t, y):
+        return self.base_fun(x,t) - y
+
+    def base_fun(self, x, t):
+        return x[0]+ x[1]*np.tanh(x[2]*(t-x[3]))
+    
+    def fit(self, Templates, frates, plot= False):
+        """ fits the model for spike rescaling """
+        
+        # keep data
+        self.Templates = Templates
+        self.frates = frates
+
+        # extract the rescaling of positive and negative part
+        self.align_templates()
+        mx= np.amax(Templates, axis= 0)
+        mn= np.amin(Templates, axis= 0)
+        x0= np.array([ 0.75, 0.1, -0.1, 40 ]) 
+        #up = sp.stats.linregress(frates, mx)
+        #dn = sp.stats.linregress(frates, mn)
+        bot= np.array([ 0, 0, -1, -np.inf ]) # lower limit
+        top= np.array([ np.inf, np.inf, 0, np.inf ])  # upper limit
+        up = least_squares(self.fun, x0, loss='soft_l1', f_scale=0.1, args=(frates, mx))
+        x0= np.array([ -0.75, 0.1, 0.1, 40 ]) 
+        bot= np.array([ -np.inf, 0, 0, -np.inf ]) # lower limit
+        top= np.array([ 0, np.inf, 20, np.inf ])  # upper limit
+        dn= least_squares(self.fun, x0, loss='soft_l1', f_scale=0.1, args=(frates, mn))
+        if plot:
+            fr_test= np.linspace(np.amin(frates),np.amax(frates),100)
+            mx_test= self.base_fun(up.x, fr_test)
+            plt.figure()
+            plt.plot(frates, mx, '.')
+            plt.plot(fr_test,mx_test)
+            print(up.x)
+            mn_test= self.base_fun(dn.x, fr_test)
+            plt.plot(fr_test,mn_test)
+            plt.plot(frates, mn, '.')
+            print(dn.x)
+            plt.show()
+        self.xup= up.x
+        self.xdn= dn.x
+        self.mean_template= np.mean(Templates, axis= 1)
+        self.mean_template[self.mean_template > 0]/= np.amax(self.mean_template[self.mean_template > 0])
+        self.mean_template[self.mean_template < 0]/= abs(np.amin(self.mean_template[self.mean_template < 0]))
+        
+    def predict(self, fr):
+        """ predicts spike shape at firing rate fr, in PC space, returns
+        inverse transform: the actual spike shape as it would be measured """
+        scale_up= self.base_fun(self.xup,fr)
+        scale_dn= abs(self.base_fun(self.xdn,fr))
+        template= self.mean_template.copy()
+        template[template > 0]= template[template > 0]*scale_up
+        template[template < 0]= template[template < 0]*scale_dn
+        return template
+   
+
+def train_Models(SpikeInfo, unit_column, Templates, n_comp=5, verbose=True, model_type=Spike_Model):
     """ trains models for all units, using labels from given unit_column """
 
     if verbose:
@@ -294,11 +370,12 @@ def train_Models(SpikeInfo, unit_column, Templates, n_comp=5, verbose=True):
         SInfo = SpikeInfo.groupby([unit_column, 'good']).get_group((unit, True))
         # data
         ix = SInfo['id']
-        T = Templates[:,ix.values]
+        ix = np.array(ix.values, dtype='int32')
+        T = Templates[:,ix]
         # frates
         frates = SInfo['frate_fast']
         # model
-        Models[unit] = Spike_Model(n_comp=n_comp)
+        Models[unit] = model_type(n_comp=n_comp)
         Models[unit].fit(T, frates)
     
     return Models
