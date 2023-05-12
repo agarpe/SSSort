@@ -34,8 +34,6 @@ import matplotlib.pyplot as plt
 # print(banner)
 
 #Load file
-mpl.rcParams['figure.dpi'] = 300
-fig_format = '.png'
 
 # get config
 config_path = Path(os.path.abspath(sys.argv[1]))
@@ -43,6 +41,9 @@ sssort_path = os.path.dirname(os.path.abspath(sys.argv[0]))
 Config = configparser.ConfigParser()
 Config.read(config_path)
 print_msg('config file read from %s' % config_path)
+
+mpl.rcParams['figure.dpi'] = Config.get('output','fig_dpi')
+fig_format = Config.get('output','fig_format')
 
 # get segment to analyse
 seg_no= Config.getint('postprocessing','segment_number')
@@ -63,7 +64,7 @@ SpikeInfo = pd.read_csv(results_folder / "SpikeInfo.csv")
 
 unit_column = [col for col in SpikeInfo.columns if col.startswith('unit')][-1]
 SpikeInfo = SpikeInfo.astype({unit_column: str})
-units = get_units(SpikeInfo,unit_column,sort=False)
+units = get_units(SpikeInfo,unit_column)
 
 #Load Templates
 Waveforms = np.load(results_folder / "Templates.npy")
@@ -166,10 +167,10 @@ SpikeInfo.loc[a_unit_rows.index, new_column] = 'A'
 b_unit_rows = SpikeInfo.groupby(new_column).get_group(b_unit)
 SpikeInfo.loc[b_unit_rows.index, new_column] = 'B'
 
-units = get_units(SpikeInfo, new_column, sort=False)
+units = get_units(SpikeInfo, new_column)
 Blk = populate_block(Blk, SpikeInfo, new_column, units)
 
 # store SpikeInfo
-outpath = results_folder / 'SpikeInfo.csv'
+outpath = results_folder / 'SpikeInfo_post.csv'
 print_msg("saving SpikeInfo to %s" % outpath)
 SpikeInfo.to_csv(outpath,index= False)
