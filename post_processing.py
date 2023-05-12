@@ -163,7 +163,7 @@ n_wdh = n_wd//2
 
 new_column = 'unit_final'
 if new_column not in SpikeInfo.keys():
-    SpikeInfo[new_column] = ' '
+    SpikeInfo[new_column] = SpikeInfo['unit_labeled']
 offset= 0   # will keep track of shifts due to inserted and deleted spikes 
 # don't consider first and last spike to avoid corner cases; these do not matter in practice anyway
 #tracemalloc.start()
@@ -212,9 +212,7 @@ for i in spike_range:
     if d_min >= d_accept or 200*d_diff/(d[best]+d2[best2]) < min_diff:
         # make plots and save them
         colors = get_colors(['A','B'], keep=False)
-        # colors = None
         fig2, ax2 = plot_fitted_spikes_pp(seg, Models, SpikeInfo, new_column, zoom=zoom, box=(float(stimes[i]),sz_wd/1000), wsize=n_samples, spike_label_interval=spike_label_interval, colors=colors)
-        # fig2, ax2 = plot_fitted_spikes(seg, seg_no, Models, SpikeInfo, unit_column, zoom=zoom, colors=colors)
         outpath = plots_folder / (str(SpikeInfo['id'][i+offset]) + '_context_plot' + fig_format)
         fig2.savefig(outpath)
 
