@@ -47,7 +47,7 @@ def calc_update_final_frates(SpikeInfo, unit_column, kernel_fast):
     """ calculate all firing rates for all units, based on unit_column. This is for after units
 have been identified as 'A' or 'B' (or unknown). Updates SpikeInfo with new columns frate_A, frate_B"""
     
-    from_units = get_units(SpikeInfo, unit_column, remove_unassigned=True)
+    from_units = get_units(SpikeInfo, unit_column)
 
     # estimating firing rate profile for "from unit" and getting the rate at "to unit" timepoints
     for j, from_unit in enumerate(from_units):
@@ -279,18 +279,20 @@ def compound_dist(d, t1, t2, n_samples, pos1, pos2, ax=None):
 def populate_block(Blk, SpikeInfo, unit_column, units):
     for i, seg in enumerate(Blk.segments):
         spike_labels = SpikeInfo.groupby(('segment')).get_group((i))[unit_column].values
-        seg.spiketrains[0].annotations['unit_labels'] = list(spike_labels)
+        SpikeTrain, = select_by_dict(seg.spiketrains, kind='all_spikes')
+        SpikeTrain.annotations['unit_labels'] = list(spike_labels)
 
         # make spiketrains
-        St = seg.spiketrains[0]
-        spike_labels = St.annotations['unit_labels']
-        sts = [St]
-
+        spike_labels = SpikeTrain.annotations['unit_labels']
+        sts = [SpikeTrain]
         for unit in units:
-            times = St.times[sp.array(spike_labels) == unit]
-            st = neo.core.SpikeTrain(times, t_start = St.t_start, t_stop=St.t_stop)
+            times = SpikeTrain.times[np.array(spike_labels) == unit]
+            st = neo.core.SpikeTrain(times, t_start = SpikeTrain.t_start, t_stop=SpikeTrain.t_stop)
             st.annotate(unit=unit)
             sts.append(st)
-        seg.spiketrains=sts
+        seg.spiketrains = sts
+
+        asigs = [seg.analogsignals[0]]
+        seg.analogsignals = asigs
 
     return Blk
