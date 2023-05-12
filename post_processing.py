@@ -66,7 +66,7 @@ Config.read(config_path)
 print_msg('config file read from %s' % config_path)
 
 # get segment to analyse
-seg_no = Config.getint('general', 'segment_number')
+seg_no = Config.getint('postprocessing', 'segment_number')
 
 # handling paths and creating outunits.sort()put directory
 data_path = Path(Config.get('path', 'data_path'))
@@ -80,7 +80,7 @@ plots_folder = results_folder / 'plots' / 'post_process_all'
 os.makedirs(plots_folder, exist_ok=True)
 
 Blk = get_data(results_folder / "result.dill")
-SpikeInfo = pd.read_csv(results_folder / "SpikeInfo.csv")
+SpikeInfo = pd.read_csv(results_folder / "SpikeInfo_post.csv")
 
 if 'unit_labeled' not in SpikeInfo.columns:
     print_msg("It appears that you have not yet labeled the spike clusters. Run cluster_identification.py first")
@@ -91,13 +91,13 @@ SpikeInfo = SpikeInfo.astype({'id': str, unit_column: str})
 units = get_units(SpikeInfo, unit_column)
 
 #plot config
-plotting_changes = Config.getboolean('postprocessing','plot_changes')
+# plotting_changes = Config.getboolean('postprocessing','plot_changes')
 mpl.rcParams['figure.dpi'] = Config.get('output','fig_dpi')
 fig_format = Config.get('output','fig_format')
 
 stimes = SpikeInfo['time']
 seg = Blk.segments[seg_no]
-fs = np.float(seg.analogsignals[0].sampling_rate)
+fs = np.float64(seg.analogsignals[0].sampling_rate)
 ifs = int(fs/1000)   # sampling rate in kHz as integer value to convert ms to bins NOTE: assumes sampling rate divisible by 1000
 
 # recalculate the latest firing rates according to spike assignments in unit_column
@@ -105,7 +105,7 @@ ifs = int(fs/1000)   # sampling rate in kHz as integer value to convert ms to bi
 kernel_fast = Config.getfloat('kernels', 'sigma_fast')
 calc_update_final_frates(SpikeInfo, unit_column, kernel_fast)
 
-templates_path = config_path.parent / results_folder / "Templates_ini.npy"
+templates_path = config_path.parent / results_folder / "Templates.npy"
 Templates = np.load(templates_path)
 print_msg('templates read from %s' % templates_path)
 n_model_comp = Config.getint('spike model', 'n_model_comp')
@@ -113,10 +113,8 @@ n_model_comp = Config.getint('spike model', 'n_model_comp')
 
 spike_model_type = Config.get('postprocessing', 'spike_model_type')
 
-# TODO ask TN about this
-# spike_model = Spike_Model if spike_model_type == "individual" else Spike_Model_Nlin 
-# Models = train_Models(SpikeInfo, unit_column, Templates, n_comp=n_model_comp, verbose=True, model_type=spike_model)
-Models = train_Models(SpikeInfo, unit_column, Templates, n_comp=n_model_comp, verbose=True)
+spike_model = Spike_Model if spike_model_type == "individual" else Spike_Model_Nlin 
+Models = train_Models(SpikeInfo, unit_column, Templates, n_comp=n_model_comp, verbose=True, model_type=spike_model)
 
 unit_ids = SpikeInfo[unit_column]
 units = get_units(SpikeInfo, unit_column)
@@ -133,7 +131,7 @@ d_reject = Config.getfloat('postprocessing', 'min_dist_for_auto_reject')
 min_diff = Config.getfloat('postprocessing', 'min_diff_for_auto_accept')
 wsize = Config.getfloat('spike detect', 'wsize')
 max_spike_diff = int(Config.getfloat('postprocessing', 'max_compound_spike_diff') * ifs)
-n_samples = np.array(Config.get('spike model', 'template_window').split(','), dtype='float32')/1000.0
+n_samples = np.array(Config.get('postprocessing', 'model_template_window').split(','), dtype='float32')/1000.0
 n_samples = np.array(n_samples*fs, dtype=int)
 
 try:
