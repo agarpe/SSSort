@@ -75,7 +75,7 @@ if not data_path.is_absolute():
 
 exp_name = Config.get('path', 'experiment_name')
 results_folder = config_path.parent / exp_name / 'results'
-plots_folder = results_folder / 'plots' / 'post_process_all' 
+plots_folder = results_folder / 'plots_post' / 'post_process_all' 
 
 os.makedirs(plots_folder, exist_ok=True)
 
