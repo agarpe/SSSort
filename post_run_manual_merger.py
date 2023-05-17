@@ -156,7 +156,7 @@ while n_clust < n_clust_final or i < max_it:
             # the merge
             ix = SpikeInfo.groupby(next_unit_col).get_group(merge[1])['id']
             SpikeInfo.loc[ix, next_unit_col] = merge[0]
-            print_msg("merging: " + ' '.join(merge))
+            print_msg("merging: " + ' '.join(merge) + "; n. clusters=%d"%(n_clust-1))
 
             unit_col = next_unit_col
         else:
