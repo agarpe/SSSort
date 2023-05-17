@@ -272,66 +272,6 @@ def plot_fitted_spikes(Segment, j, Models, SpikeInfo, unit_column, unit_order=No
 
     return fig, axes
 
-#TODO: adapt to above
-def plot_fitted_spikes_post(Segment, Models, SpikeInfo, unit_column, unit_order=None, zoom=None, box= None, save=None, colors=None,wsize=40,rejs=None, spike_label_interval= 0):
-    """ plot to inspect fitted spikes """
-    fig, axes = plt.subplots(nrows=2, sharex=True, sharey=True, num=1, clear=True, figsize= [ 4, 3 ])
-
-    asig = Segment.analogsignals[0]
-    fs = asig.sampling_rate
-    as_min= np.amin(asig)
-    as_max= np.amax(asig)
-    ylim= [ 1.1*as_min, 1.1*as_max ]
-    
-    #if zoom is not None:
-        #left= max(int(zoom[0]*fs),0)
-        #right= min(int(zoom[1]*fs),len(asig.data))
-    #else:
-        #left= 0
-        #right= len(asig.data)
-
-    #axes[0].plot(asig.times[left:right], asig.data[left:right], color='k', lw=0.5)
-    #axes[1].plot(asig.times[left:right], asig.data[left:right], color='k', lw=0.5)
-    axes[0].plot(asig.times, asig.data, color='k', lw=0.5)
-    axes[1].plot(asig.times, asig.data, color='k', lw=0.5)
-
-    if zoom is not None:
-        for ax in axes:
-            ax.set_xlim(zoom)
-
-    for ax in axes:
-        ax.set_ylim(ylim)
-
-    st = Segment.spiketrains[0]  # get all spike trains (assuming there's only one spike train)
-    if rejs is None:
-        rejs= SpikeInfo["time"][SpikeInfo[unit_column] == '-2']
-    units = get_units(SpikeInfo,unit_column)
-    fac= axes[1].get_ylim()[1]*(0.95-len(units)*0.05)
-    axes[1].plot(rejs, np.ones(rejs.shape)*fac, '|', markersize=2, color='k', label="rejected spike")
-
-    plot_by_unit(axes[1], st, asig, Models, SpikeInfo, unit_column, unit_order,
-                 colors, wsize)
-            
-    if box is not None:
-        plot_box(axes[0], box)
-        plot_box(axes[1], box)
-       
-    plot_spike_labels(axes[0], SpikeInfo, spike_label_interval)
-    plot_spike_labels(axes[1], SpikeInfo, spike_label_interval)
-    fig.tight_layout()
-    #fig.subplots_adjust(top=0.9)
-    #sns.despine(fig)
-    
-    fig.legend()
-
-    if save is not None:
-        fig.savefig(save)
-        # plt.close(fig)
-
-    return fig, axes
-
-
-
 def plot_convergence(ScoresSum, save=None):
     """ convergence check """
     fig, axes = plt.subplots(figsize=[4,3])
