@@ -88,6 +88,10 @@ if len(units) != 3:
 template_A = np.load(os.path.join(sssort_path, "templates/template_A.npy"))
 template_B = np.load(os.path.join(sssort_path, "templates/template_B.npy"))
 
+if Config.get('spike detect','peak_mode') == 'negative':
+    template_A = np.flip(template_A,0)
+    template_B = np.flip(template_B,0)
+
 # templates and waveforms need to be put on comparable shape and size
 tmid_a = np.argmax(template_A)
 tmid_b = np.argmax(template_B)
