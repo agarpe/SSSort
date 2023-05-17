@@ -186,6 +186,9 @@ while n_clust < n_clust_final or i < max_it:
  ##       #### ##    ## ####  ######  ##     ## 
  
 """
+
+plt.ioff()
+
 kernel_slow = Config.getfloat('kernels','sigma_slow')
 kernel_fast = Config.getfloat('kernels','sigma_fast')
 last_unit_col = [col for col in SpikeInfo.columns if col.startswith('unit')][-1]
