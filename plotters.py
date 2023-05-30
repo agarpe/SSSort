@@ -601,7 +601,7 @@ def plot_fitted_spikes_complete(seg, Models, SpikeInfo, unit_column,max_window, 
         if rejs is None:
             rejs = SpikeInfo["time"][SpikeInfo[unit_column] == '-2']
 
-        plot_function(seg, Models, SpikeInfo, unit_column, zoom=zoom, save=outpath,wsize=wsize, rejs=rejs, spike_label_interval=spike_label_interval)
+        plot_function(seg, Models, SpikeInfo, unit_column, zoom=zoom, save=outpath,wsize=wsize, rejs=rejs, spike_label_interval=spike_label_interval, colors=colors)
 
 def plot_means(means, units, template_a, template_b, asigs, outpath=None, show=False, colors=None):
     fig, axes = plt.subplots(ncols=len(units), figsize=[len(units)*3,4])
