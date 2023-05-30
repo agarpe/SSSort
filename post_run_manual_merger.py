@@ -120,7 +120,7 @@ Templates = np.load(results_folder / "Templates.npy")
 clust_alpha = Config.getfloat('spike sort','clust_alpha')
 n_clust_final = Config.getint('spike sort','n_clust_final')
 
-max_it = 20
+max_it = Config.getfloat('postprocessing','max_it')
 rejected_merges = []
 unit_col = unit_columns[-1]
 n_merge = 0
@@ -175,6 +175,9 @@ while n_clust < n_clust_final or i < max_it:
         print_msg("desired number of %i clusters reached" % n_clust_final)
         break
     
+
+print_msg("algorithm run is done, %i clusters reached" % n_clust)
+
 """
  
  ######## #### ##    ## ####  ######  ##     ## 
