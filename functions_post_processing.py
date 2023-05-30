@@ -65,9 +65,9 @@ have been identified as 'A' or 'B' (or unknown). Updates SpikeInfo with new colu
             # can not set it's own rate, when there are no spikes in this segment for this unit
             pass
 
-def save_all(results_folder, SpikeInfo, Blk, FinalSpikes= False):
+def save_all(results_folder, SpikeInfo, Blk, FinalSpikes= False, f_extension=''):
     # store SpikeInfo
-    outpath = results_folder / 'SpikeInfo.csv'
+    outpath = results_folder / ('SpikeInfo_%s.csv'%f_extension)
     print_msg("saving SpikeInfo to %s" % outpath)
     SpikeInfo.to_csv(outpath, index= False)
 
