@@ -136,7 +136,6 @@ n_samples = np.array(n_samples*fs, dtype=int)
 
 try:
     spkr = Config.get('postprocessing', 'spike_range').replace(' ','').split(',')
-    print(type(SpikeInfo['id']))
     spike_range = range(pd.Index(SpikeInfo['id']).get_loc(spkr[0]), pd.Index(SpikeInfo['id']).get_loc(spkr[1]))
 except:
     print_msg("spike index range not valid, reverting to processing all")
@@ -307,8 +306,6 @@ for i in spike_range:
         
     else:
         # it's a non-spike - delete it or mark for deletion
-        print(SpikeInfo['id'][i+offset])
-        print(type(SpikeInfo['id'][i+offset]))
         if 'B' in str(SpikeInfo['id'][i+offset]):   # this is a spike entry that was previously created by DroSort, delete
             SpikeInfo= delete_row(SpikeInfo, i+offset)
             print_msg("Spike {}: Not a spike, inserted by DroSort previously, row removed".format(SpikeInfo['id'][i+offset]))
@@ -355,16 +352,18 @@ print_msg("Number of spikes in trace: %d"%SpikeInfo[new_column].size)
 print_msg("Number of clusters: %d"%len(units))
 
 # warning firing rates not saved, too high memory use.
-save_all(results_folder, SpikeInfo, Blk, FinalSpikes=True)
+save_all(results_folder, SpikeInfo, Blk, FinalSpikes=True, f_extension='post')
 
 do_plot = Config.getboolean('postprocessing','plot_fitted_spikes')
 
 if do_plot:
     print_msg("creating plots")
     outpath = plots_folder / ('overview' + fig_format)
-    plot_segment(seg, units, save=outpath)
+    plot_segment(seg, units, save=outpath, colors=colors)
 
     max_window = Config.getfloat('output','max_window_fitted_spikes_overview')
-    plot_fitted_spikes_complete(seg, Models, SpikeInfo, new_column, max_window, plots_folder, fig_format, wsize=n_samples, extension='_templates', spike_label_interval=spike_label_interval)
+    plot_fitted_spikes_complete(seg, Models, SpikeInfo, new_column, max_window,
+                             plots_folder, fig_format, wsize=n_samples, extension='_templates',
+                             spike_label_interval=spike_label_interval, colors=colors)
     print_msg("plotting done")
 
