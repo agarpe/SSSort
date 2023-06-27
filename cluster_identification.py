@@ -60,7 +60,11 @@ plots_folder = results_folder / 'plots_post'
 os.makedirs(plots_folder, exist_ok=True)
 
 Blk = get_data(results_folder  / "result.dill")
-SpikeInfo = pd.read_csv(results_folder / "SpikeInfo.csv")
+
+if input('Use SpikeInfo_manual.csv? (Y/N)').upper() == 'Y':
+    SpikeInfo = pd.read_csv(results_folder / "SpikeInfo_manual.csv")
+else:
+    SpikeInfo = pd.read_csv(results_folder / "SpikeInfo.csv")
 
 unit_column = [col for col in SpikeInfo.columns if col.startswith('unit')][-1]
 SpikeInfo = SpikeInfo.astype({unit_column: str})
