@@ -534,10 +534,13 @@ def calculate_pairwise_distances(Templates, SpikeInfo, unit_column, n_comp=5):
             Sds[i,j] = np.std(D_pw)
     return Avgs, Sds
 
-def best_merge(Avgs, Sds, units, alpha=1):
+def best_merge(Avgs, Sds, units, alpha=1, exclude=[]):
     """ merge two units if their average between distance is lower than within distance.
     SD scaling by factor alpha regulates aggressive vs. conservative merging
-    the larger alpha, the more agressive """
+    the larger alpha, the more agressive
+    
+    exclude is a list of rejected merges pairs
+    """
 
     Q = copy.copy(Avgs)
     
@@ -549,11 +552,17 @@ def best_merge(Avgs, Sds, units, alpha=1):
         if (i,i) in merge_candidates:
             merge_candidates.remove((i,i))
 
+    if len(exclude) > 0:
+        for exclude_pair in exclude:
+            pair = tuple([units.index(e) for e in exclude_pair])
+            if pair in merge_candidates:
+                merge_candidates.remove(pair)
+
     if len(merge_candidates) > 0:
         min_ix = np.argmin([Q[c] for c in merge_candidates])
         pair = merge_candidates[min_ix]
-        merge = [units[pair[0]], units[pair[1]]]
+        merge = (units[pair[0]], units[pair[1]])
     else:
-         merge = []
+        merge = ()
 
     return merge
