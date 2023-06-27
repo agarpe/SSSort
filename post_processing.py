@@ -80,10 +80,16 @@ plots_folder = results_folder / 'plots_post' / 'post_process_all'
 os.makedirs(plots_folder, exist_ok=True)
 
 Blk = get_data(results_folder / "result.dill")
-SpikeInfo = pd.read_csv(results_folder / "SpikeInfo_post.csv")
 
+error_msg="It appears that you have not yet labeled the spike clusters. Run cluster_identification.py first"
+try:
+    SpikeInfo = pd.read_csv(results_folder / "SpikeInfo_post.csv")
+except:
+    print_msg(error_msg)
+    exit()
+    
 if 'unit_labeled' not in SpikeInfo.columns:
-    print_msg("It appears that you have not yet labeled the spike clusters. Run cluster_identification.py first")
+    print_msg(error_msg)
     exit()
     
 unit_column = 'unit_labeled'
@@ -131,7 +137,7 @@ d_reject = Config.getfloat('postprocessing', 'min_dist_for_auto_reject')
 min_diff = Config.getfloat('postprocessing', 'min_diff_for_auto_accept')
 wsize = Config.getfloat('spike detect', 'wsize')
 max_spike_diff = int(Config.getfloat('postprocessing', 'max_compound_spike_diff') * ifs)
-n_samples = np.array(Config.get('postprocessing', 'model_template_window').split(','), dtype='float32')/1000.0
+n_samples = np.array(Config.get('postprocessing', 'template_window').split(','), dtype='float32')/1000.0
 n_samples = np.array(n_samples*fs, dtype=int)
 
 try:
@@ -213,6 +219,8 @@ for i in spike_range:
         colors = get_colors(['A','B'], keep=False)
         fig2, ax2 = plot_fitted_spikes_pp(seg, Models, SpikeInfo, new_column, zoom=zoom, box=(float(stimes[i]),sz_wd/1000), wsize=n_samples, spike_label_interval=spike_label_interval, colors=colors)
         outpath = plots_folder / (str(SpikeInfo['id'][i+offset]) + '_context_plot' + fig_format)
+        ax2[1].plot(stimes[i], 1, '.', color='y')
+
         fig2.savefig(outpath)
 
         fig, ax = plt.subplots(ncols=2, sharey= True, figsize=[ 4, 2])
@@ -246,7 +254,7 @@ for i in spike_range:
         # it's a single spike - choose the appropriate single spike unit
         peak_pos = np.argmax(templates[un[best]])
         peak_diff = peak_pos-n_samples[0]   # difference in actual peak pos compared where it should be
-        spike_time = stimes[i]+np.float((sh[best]-n_wdh+peak_diff))/fs  # spike time in seconds
+        spike_time = stimes[i]+np.float64((sh[best]-n_wdh+peak_diff))/fs  # spike time in seconds
         if (abs(stimes[i+1]-spike_time)*fs < max_spike_diff):
             skip= True
             # this spike was recorded within compound spike distance before
@@ -274,7 +282,7 @@ for i in spike_range:
         spike_unit = 'A' if orig_spike == 0 else 'B'
         peak_pos = np.argmax(templates[spike_unit])
         peak_diff = peak_pos-n_samples[0]   # difference in actual peak pos compared where it should be
-        spike_time = stimes[i]+np.float(sh2[best2][orig_spike]-n_wdh+peak_diff)/fs  # spike time in seconds
+        spike_time = stimes[i]+np.float64(sh2[best2][orig_spike]-n_wdh+peak_diff)/fs  # spike time in seconds
         print_msg("Spike {}: time= {}: Compound spike, first spike of type {}, time= {}".format(SpikeInfo['id'][i+offset],('%.4f' % SpikeInfo['time'][i+offset]),spike_unit,('%.4f' % spike_time)))
         SpikeInfo[new_column][i+offset] = spike_unit
         SpikeInfo['time'][i+offset] = spike_time
