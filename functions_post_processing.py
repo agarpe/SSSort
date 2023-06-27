@@ -239,12 +239,13 @@ def dist(d, t, n_samples, pos, unit=None, ax=None):
     d2[start:stop]= d[start:stop]   # data cropped to comparison region
     dst = np.linalg.norm(d2-t2)
     if ax is not None:
-        ax.plot(d,'.', markersize=1)
-        ax.plot(d2, linewidth=0.7)
-        ax.plot(t2, linewidth=0.7)
-        ax.set_ylim(-1.2, 1.2)
-        lbl = unit + ': d=' if unit is not None else ''
+        ax.plot(d,'.',markersize=1, label='org. trace')
+        ax.plot(d2,linewidth= 0.7, label='comp. region')
+        ax.plot(t2,linewidth= 0.7, label='template')
+        ax.set_ylim(-1.2,1.2)
+        lbl= unit+': d=' if unit is not None else ''
         ax.set_title(lbl+('%.4f' % (dst/(stop-start))))
+        ax.legend()
     return dst/(stop-start)
     #return dst
 
