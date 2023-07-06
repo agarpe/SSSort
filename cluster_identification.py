@@ -181,9 +181,6 @@ SpikeInfo.loc[a_unit_rows.index, new_column] = 'A'
 b_unit_rows = SpikeInfo.groupby(new_column).get_group(b_unit)
 SpikeInfo.loc[b_unit_rows.index, new_column] = 'B'
 
-units = get_units(SpikeInfo, new_column)
-Blk = populate_block(Blk, SpikeInfo, new_column, units)
-
 # store SpikeInfo
 outpath = results_folder / 'SpikeInfo_post.csv'
 print_msg("saving SpikeInfo to %s" % outpath)
