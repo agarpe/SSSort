@@ -150,6 +150,12 @@ SpikeTrain, = select_by_dict(seg.spiketrains, kind='all_spikes')
 outpath = plots_folder / ("spike_detect" + fig_format)
 plot_spike_detect(AnalogSignal, SpikeTrain, 5, w=30*pq.ms, save=outpath)
 
+for seg_no,seg in enumerate(Blk.segments):
+    #Plot detected spikes
+    namepath = plots_folder / ("first_spike_detection_%d"%seg_no)
+    plot_spike_events(seg,thres=MAD(AnalogSignal)*mad_thresh,save=namepath,save_format=fig_format,show=False,max_window=0.4,max_row=3)
+
+print_msg("detected spikes plotted")
 """
  
  ######## ######## ##     ## ########  ##          ###    ######## ########  ######  
