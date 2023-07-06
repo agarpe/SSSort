@@ -126,10 +126,45 @@ unit_col = unit_columns[-1]
 n_merge = 0
 n_clust = len(get_units(SpikeInfo, unit_col, remove_unassinged=True))
 
+it = unit_col
+print(unit_col)
+
 
 i = 0
 while n_clust < n_clust_final or i < max_it:
     i += 1
+    # unit columns
+    prev_unit_col = 'unit_%i' % (it-1)
+    this_unit_col = 'unit_%i' % it
+
+    # update rates
+    calc_update_frates(SpikeInfo, prev_unit_col, kernel_fast, kernel_slow)
+
+    # train models with labels from last iteration
+    Models = train_Models(SpikeInfo, prev_unit_col, Templates, verbose=False, n_comp=n_model_comp)
+    outpath = plots_folder / ("Models_%s%s" % (prev_unit_col, fig_format))
+    plot_Models(Models, save=outpath)
+
+    # Score spikes with models
+    if it == its-1: # the last
+        penalty = 0
+    Scores, units = Score_spikes(Templates, SpikeInfo, prev_unit_col, Models, score_metric=Rss,
+                                 reassign_penalty=reassign_penalty, noise_penalty=noise_penalty)
+
+
+    # assign new labels
+    min_ix = np.argmin(Scores, axis=1)
+    new_labels = np.array([units[i] for i in min_ix], dtype='object')
+    SpikeInfo[this_unit_col] = new_labels
+
+    # clean assignment
+    SpikeInfo = unassign_spikes(SpikeInfo, this_unit_col)
+    reject_spikes(Templates, SpikeInfo, this_unit_col)
+
+    # randomly unassign a fraction of spikes
+    if it != its-1: # the last
+        N = int(n_spikes * sorting_noise)
+        SpikeInfo.loc[SpikeInfo.sample(N).index, this_unit_col] = '-1'
 
     # calculate best merge
     units = get_units(SpikeInfo, unit_col)
@@ -164,10 +199,29 @@ while n_clust < n_clust_final or i < max_it:
             rejected_merges.append(merge)
 
         plt.close('all')
+        plt.ioff()
 
     else:
         clust_alpha += 0.05
         print_msg("no merges, increasing alpha: %.2f" % clust_alpha)
+
+    
+    # Model eval
+    n_changes = np.sum(~(SpikeInfo[this_unit_col] == SpikeInfo[prev_unit_col]).values)
+    valid_ix = np.where(SpikeInfo[this_unit_col] != '-1')[0]
+    
+    Rss_sum = np.sum(np.min(Scores[valid_ix], axis=1)) / Templates.shape[1]
+    ScoresSum.append(Rss_sum)
+    units = get_units(SpikeInfo, this_unit_col)
+    AICs.append(len(units) - 2 * np.log(Rss_sum))
+
+    # print iteration info
+    print_msg("It:%i - Rss sum: %.3e - # reassigned spikes: %s" % (it, Rss_sum, n_changes))
+
+    # exit condition if n_clusters is reached
+    if len(get_units(SpikeInfo, this_unit_col, remove_unassinged=True)) == n_clust_final:
+        print_msg("aborting training loop, desired number of %i clusters reached" % n_clust_final)
+        break
 
     # exit condition if n_clusters is reached
     n_clust = len(get_units(SpikeInfo, unit_col, remove_unassinged=True))
