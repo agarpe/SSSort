@@ -79,8 +79,18 @@ plots_folder = results_folder / 'plots_post' / 'post_process_all'
 
 os.makedirs(plots_folder, exist_ok=True)
 
+#plot config
+# plotting_changes = Config.getboolean('postprocessing','plot_changes')
+mpl.rcParams['figure.dpi'] = Config.get('output','fig_dpi')
+fig_format = Config.get('output','fig_format')
+
+
+# Load necessary data
+
+# Load block
 Blk = get_data(results_folder / "result.dill")
 
+# Load SpikeInfo
 error_msg="It appears that you have not yet labeled the spike clusters. Run cluster_identification.py first"
 try:
     SpikeInfo = pd.read_csv(results_folder / "SpikeInfo_post.csv")
@@ -96,15 +106,12 @@ unit_column = 'unit_labeled'
 SpikeInfo = SpikeInfo.astype({'id': str, unit_column: str})
 units = get_units(SpikeInfo, unit_column)
 
-#plot config
-# plotting_changes = Config.getboolean('postprocessing','plot_changes')
-mpl.rcParams['figure.dpi'] = Config.get('output','fig_dpi')
-fig_format = Config.get('output','fig_format')
-
 stimes = SpikeInfo['time']
 seg = Blk.segments[seg_no]
 fs = np.float64(seg.analogsignals[0].sampling_rate)
 ifs = int(fs/1000)   # sampling rate in kHz as integer value to convert ms to bins NOTE: assumes sampling rate divisible by 1000
+
+### Train models 
 
 # recalculate the latest firing rates according to spike assignments in unit_column
 #kernel_slow = Config.getfloat('kernels','sigma_slow')
@@ -127,6 +134,8 @@ units = get_units(SpikeInfo, unit_column)
 frate = {}
 for unit in units:
     frate[unit] = SpikeInfo['frate_'+unit]
+
+##########################################################################################
 
 sz_wd = Config.getfloat('postprocessing', 'spike_window_width')
 align_mode = Config.get('postprocessing', 'vertical_align_mode')
@@ -292,7 +301,7 @@ for i in spike_range:
         o_spike_unit = 'A' if other_spike == 0 else 'B'
         peak_pos = np.argmax(templates[o_spike_unit])
         peak_diff = peak_pos-n_samples[0]   # difference in actual peak pos compared where it should be
-        o_spike_time = stimes[i]+np.float(sh2[best2][other_spike]-n_wdh+peak_diff)/fs  # spike time in seconds
+        o_spike_time = stimes[i]+float(sh2[best2][other_spike]-n_wdh+peak_diff)/fs  # spike time in seconds
         found = False
         for j in [i-1, i+1]:
             if abs(stimes[j]-o_spike_time)*fs < same_spike_tolerance:
