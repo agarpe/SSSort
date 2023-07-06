@@ -137,6 +137,10 @@ for i, seg in enumerate(Blk.segments):
     st = spike_detect(AnalogSignal, global_mad*mad_thresh, min_prominence)
     st.annotate(kind='all_spikes')
 
+    print(st)
+    if len(st) == 0:
+        print_msg("No spikes detected, please enter valid threshold values in the configuration file")
+        exit()
     # remove border spikes
     st_cut = st.time_slice(st.t_start + wsize/2, st.t_stop - wsize/2)
     st_cut.t_start = st.t_start
