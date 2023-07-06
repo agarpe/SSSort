@@ -103,7 +103,18 @@ with open(results_folder / "Models.dill", 'rb') as fH:
 
 # loading Templates
 Templates = np.load(results_folder / "Templates.npy")
+n_spikes = Templates.shape[1]
 
+reassign_penalty = Config.getfloat('spike sort', 'reassign_penalty')
+noise_penalty = Config.getfloat('spike sort', 'noise_penalty')
+sorting_noise = Config.getfloat('spike sort', 'f_noise')
+
+# model
+n_model_comp = Config.getint('spike model','n_model_comp')
+
+# rate est
+kernel_slow = Config.getfloat('kernels', 'sigma_slow')
+kernel_fast = Config.getfloat('kernels', 'sigma_fast')
 """
  
  ##     ## ######## ########   ######   #### ##    ##  ######      ##        #######   #######  ########  
@@ -126,10 +137,10 @@ unit_col = unit_columns[-1]
 n_merge = 0
 n_clust = len(get_units(SpikeInfo, unit_col, remove_unassinged=True))
 
-it = unit_col
-print(unit_col)
+it = int(unit_col[unit_col.find('_')+1:]) + 1
 
-
+ScoresSum = []
+AICs = []
 i = 0
 while n_clust < n_clust_final or i < max_it:
     i += 1
@@ -146,7 +157,7 @@ while n_clust < n_clust_final or i < max_it:
     plot_Models(Models, save=outpath)
 
     # Score spikes with models
-    if it == its-1: # the last
+    if it == max_it-1: # the last
         penalty = 0
     Scores, units = Score_spikes(Templates, SpikeInfo, prev_unit_col, Models, score_metric=Rss,
                                  reassign_penalty=reassign_penalty, noise_penalty=noise_penalty)
@@ -162,7 +173,7 @@ while n_clust < n_clust_final or i < max_it:
     reject_spikes(Templates, SpikeInfo, this_unit_col)
 
     # randomly unassign a fraction of spikes
-    if it != its-1: # the last
+    if it != max_it-1: # the last
         N = int(n_spikes * sorting_noise)
         SpikeInfo.loc[SpikeInfo.sample(N).index, this_unit_col] = '-1'
 
@@ -205,7 +216,7 @@ while n_clust < n_clust_final or i < max_it:
         clust_alpha += 0.05
         print_msg("no merges, increasing alpha: %.2f" % clust_alpha)
 
-    
+
     # Model eval
     n_changes = np.sum(~(SpikeInfo[this_unit_col] == SpikeInfo[prev_unit_col]).values)
     valid_ix = np.where(SpikeInfo[this_unit_col] != '-1')[0]
