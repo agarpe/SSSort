@@ -137,7 +137,6 @@ for i, seg in enumerate(Blk.segments):
     st = spike_detect(AnalogSignal, global_mad*mad_thresh, min_prominence)
     st.annotate(kind='all_spikes')
 
-    print(st)
     if len(st) == 0:
         print_msg("No spikes detected, please enter valid threshold values in the configuration file")
         exit()
@@ -383,11 +382,12 @@ for it in range(1,its):
     print_msg("It:%i - Rss sum: %.3e - # reassigned spikes: %s" % (it, Rss_sum, n_changes))
 
     # exit condition if n_clusters is reached
-    if len(get_units(SpikeInfo, this_unit_col, remove_unassinged=True)) == n_clust_final:
+    n_clust = len(get_units(SpikeInfo, this_unit_col, remove_unassinged=True))
+    if n_clust == n_clust_final:
         print_msg("aborting training loop, desired number of %i clusters reached" % n_clust_final)
         break
 
-print_msg("algorithm run is done")
+print_msg("algorithm run is done # clusters %d"%n_clust)
 
 """
  
