@@ -208,6 +208,9 @@ while n_clust < n_clust_final or i < max_it:
             # if no, add merge to the list of forbidden merges
             rejected_merges.append(merge)
 
+        if abs(n_clust - n_clust_final) < 3:
+            rejected_merges = []
+
         # plt.close('all')
         # plt.ioff()
 
