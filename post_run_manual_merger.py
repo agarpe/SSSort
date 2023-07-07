@@ -153,8 +153,8 @@ while n_clust < n_clust_final or i < max_it:
 
     # train models with labels from last iteration
     Models = train_Models(SpikeInfo, prev_unit_col, Templates, verbose=False, n_comp=n_model_comp)
-    outpath = plots_folder / ("Models_%s%s" % (prev_unit_col, fig_format))
-    plot_Models(Models, save=outpath)
+    # outpath = plots_folder / ("Models_%s%s" % (prev_unit_col, fig_format))
+    # plot_Models(Models, save=outpath)
 
     # Score spikes with models
     if it == max_it-1: # the last
@@ -183,7 +183,6 @@ while n_clust < n_clust_final or i < max_it:
     merge = best_merge(Avgs, Sds, units, clust_alpha)
 
     if len(merge) > 0 and merge not in rejected_merges:
-
         # show plots for this merge
         colors = get_colors(units)
         for k,v in colors.items():
@@ -209,13 +208,12 @@ while n_clust < n_clust_final or i < max_it:
             # if no, add merge to the list of forbidden merges
             rejected_merges.append(merge)
 
-        plt.close('all')
-        plt.ioff()
+        # plt.close('all')
+        # plt.ioff()
 
     else:
         clust_alpha += 0.05
         print_msg("no merges, increasing alpha: %.2f" % clust_alpha)
-
 
     # Model eval
     n_changes = np.sum(~(SpikeInfo[this_unit_col] == SpikeInfo[prev_unit_col]).values)
