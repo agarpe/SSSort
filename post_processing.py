@@ -27,9 +27,15 @@ plt.rcParams.update({'font.size': 6})
 
 # insert row *after* idx
 def insert_row(df, idx, df_insert):
-    dfA = df.iloc[:idx+1, ]
-    dfB = df.iloc[idx+1:, ]
-    df = dfA.append(df_insert).append(dfB).reset_index(drop = True)
+    dfA = df.iloc[:idx+1, ].copy()
+    dfB = df.iloc[idx+1:, ].copy()
+    df_insert = pd.DataFrame([df_insert], columns=df.columns)
+
+    # Iterate over the columns and force the same data type as in df_insert
+    for column in df.columns:
+        df_insert[column] = df_insert[column].astype(df[column].dtype)
+
+    df = pd.concat([dfA, df_insert, dfB]).reset_index(drop=True)
     return df
 
 # delete row at idx
