@@ -131,6 +131,8 @@ kernel_fast = Config.getfloat('kernels', 'sigma_fast')
 clust_alpha = Config.getfloat('spike sort','clust_alpha')
 n_clust_final = Config.getint('spike sort','n_clust_final')
 
+change_cluster = Config.getint('postprocessing', 'cluster_limit_train')
+
 max_it = Config.getfloat('postprocessing','max_it')
 rejected_merges = []
 unit_col = unit_columns[-1]
@@ -142,7 +144,7 @@ it = int(unit_col[unit_col.find('_')+1:]) + 1
 ScoresSum = []
 AICs = []
 i = 0
-while n_clust < n_clust_final or i < max_it:
+while n_clust > n_clust_final or i < max_it:
     i += 1
     # unit columns
     prev_unit_col = 'unit_%i' % (it-1)
@@ -162,27 +164,41 @@ while n_clust < n_clust_final or i < max_it:
     Scores, units = Score_spikes(Templates, SpikeInfo, prev_unit_col, Models, score_metric=Rss,
                                  reassign_penalty=reassign_penalty, noise_penalty=noise_penalty)
 
+    #If still changing from prediction
+    if n_clust > change_cluster:
+        # assign new labels
+        min_ix = sp.argmin(Scores, axis=1)
+        new_labels = sp.array([units[i] for i in min_ix],dtype='object')
 
-    # assign new labels
-    min_ix = np.argmin(Scores, axis=1)
-    new_labels = np.array([units[i] for i in min_ix], dtype='object')
+    else: #stop clusters changes and force merging
+        new_labels = sp.array(SpikeInfo[prev_unit_col])
+        it_merge = 1
+        clust_alpha = 10
+        # assign new labels just for spikes with unit "-1"
+        mone_spikes= SpikeInfo[prev_unit_col].values == '-1'
+        if np.sum(mone_spikes) > 0:
+            min_ix = sp.argmin(Scores[mone_spikes,:], axis=1)
+            new_labels[mone_spikes] = sp.array([units[i] for i in min_ix],dtype='object')
+
     SpikeInfo[this_unit_col] = new_labels
+    n_changes = np.sum(~(SpikeInfo[prev_unit_col]==SpikeInfo[this_unit_col]))
+    print_msg("Changes by scoring: %d "%n_changes)
 
     # clean assignment
     SpikeInfo = unassign_spikes(SpikeInfo, this_unit_col)
     reject_spikes(Templates, SpikeInfo, this_unit_col)
 
-    # randomly unassign a fraction of spikes
-    if it != max_it-1: # the last
-        N = int(n_spikes * sorting_noise)
-        SpikeInfo.loc[SpikeInfo.sample(N).index, this_unit_col] = '-1'
+    # # randomly unassign a fraction of spikes
+    # if it != max_it-1: # the last
+    #     N = int(n_spikes * sorting_noise)
+    #     SpikeInfo.loc[SpikeInfo.sample(N).index, this_unit_col] = '-1'
 
     # calculate best merge
     units = get_units(SpikeInfo, unit_col)
     Avgs, Sds = calculate_pairwise_distances(Templates, SpikeInfo, unit_col)
-    merge = best_merge(Avgs, Sds, units, clust_alpha)
+    merge = best_merge(Avgs, Sds, units, clust_alpha, rejected_merges)
 
-    if len(merge) > 0 and merge not in rejected_merges:
+    if len(merge) > 0:
         # show plots for this merge
         colors = get_colors(units)
         for k,v in colors.items():
@@ -207,6 +223,7 @@ while n_clust < n_clust_final or i < max_it:
         else:
             # if no, add merge to the list of forbidden merges
             rejected_merges.append(merge)
+            print(rejected_merges)
 
         # plt.close('all')
         # plt.ioff()

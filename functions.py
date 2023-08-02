@@ -534,7 +534,7 @@ def calculate_pairwise_distances(Templates, SpikeInfo, unit_column, n_comp=5):
             Sds[i,j] = np.std(D_pw)
     return Avgs, Sds
 
-def best_merge(Avgs, Sds, units, alpha=1):
+def best_merge(Avgs, Sds, units, alpha=1, rejected_merges=[]):
     """ merge two units if their average between distance is lower than within distance.
     SD scaling by factor alpha regulates aggressive vs. conservative merging
     the larger alpha, the more agressive """
@@ -544,16 +544,33 @@ def best_merge(Avgs, Sds, units, alpha=1):
     for i in range(Avgs.shape[0]):
         Q[i,i] = Avgs[i,i] + alpha * Sds[i,i]
 
-    merge_candidates = list(zip(np.arange(Q.shape[0]), np.argmin(Q,1)))
-    for i in range(Q.shape[0]):
-        if (i,i) in merge_candidates:
-            merge_candidates.remove((i,i))
+    try:
+        merge_candidates = list(zip(sp.arange(Q.shape[0]),sp.argmin(Q,1)))
 
-    if len(merge_candidates) > 0:
-        min_ix = np.argmin([Q[c] for c in merge_candidates])
+        # remove self
+        for i in range(Q.shape[0]):
+            try:
+                merge_candidates.remove((i,i))
+            except ValueError:
+                pass
+
+        # sort the merge candidate pairs and make them unique
+        merge_candidates= [ tuple(sorted(x)) for x in merge_candidates ]
+        merge_candidates= list(set(merge_candidates))
+
+        # remove illegal merges
+        for x in rejected_merges:
+            try:
+                i= units.index(x[0])
+                j= units.index(x[1])
+                merge_candidates.remove((i,j))
+            except ValueError:
+                pass
+
+        min_ix = sp.argmin([Q[c] for c in merge_candidates])
         pair = merge_candidates[min_ix]
-        merge = [units[pair[0]], units[pair[1]]]
-    else:
-         merge = []
+        merge =  [units[pair[0]],units[pair[1]]]
+    except:
+        merge = []
 
     return merge
